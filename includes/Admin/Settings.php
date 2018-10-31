@@ -67,9 +67,9 @@ class Settings {
 			$num_to_generate = absint( $_POST['num_products_to_generate'] );
 			// @todo kick off generation here
 			add_action( 'admin_notices', array( __CLASS__, 'product_generating_notice' ) );
-		} else if ( ! empty( $_POST['generate_orders'] ) && ! empty( $_POST['num_orders_to_generate'] ) && ! empty( $_POST['order_generation_interval'] ) ) {
+		} elseif ( ! empty( $_POST['generate_orders'] ) && ! empty( $_POST['num_orders_to_generate'] ) && ! empty( $_POST['order_generation_interval'] ) ) {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
-			$num_to_generate = absint( $_POST['num_orders_to_generate'] );
+			$num_to_generate           = absint( $_POST['num_orders_to_generate'] );
 			$order_generation_interval = absint( $_POST['order_generation_interval'] );
 			// @todo kick off generation here
 			add_action( 'admin_notices', array( __CLASS__, 'order_generating_notice' ) );

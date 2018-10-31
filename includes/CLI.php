@@ -7,12 +7,34 @@
 
 namespace WC\SmoothGenerator;
 
-use WP_CLI, WP_CLI_Command;
+use WC\SmoothGenerator\Generator\Customer;
+use WC\SmoothGenerator\Generator\Order;
+use WC\SmoothGenerator\Generator\Product;
+use WP_CLI;
+use WP_CLI_Command;
 
 /**
  * WP-CLI Integration class
  */
 class CLI extends WP_CLI_Command {
+
+	/**
+	 * CLI constructor.
+	 */
+	public function __construct() {
+		register_shutdown_function( array( $this, 'shutdown' ) );
+	}
+
+	/**
+	 * Catch PHP Fatal Errors and print to command line
+	 */
+	public function shutdown() {
+		$error = error_get_last();
+		if ( isset( $error['type'] ) && E_ERROR === $error['type'] ) {
+			WP_CLI::error( $error['message'] );
+		}
+	}
+
 	/**
 	 * Generate products.
 	 *
@@ -31,11 +53,15 @@ class CLI extends WP_CLI_Command {
 	 * @param arrat $assoc_args Associative arguments specified.
 	 */
 	public function products( $args, $assoc_args ) {
-		list( $amount ) = $args;
-
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Generating products', $amount );
+		$amount    = isset( $args[0] ) ? intval( $args[0] ) : 100;
+		$generator = new Product();
+		$progress  = \WP_CLI\Utils\make_progress_bar( 'Generating products', $amount );
 		for ( $i = 1; $i <= $amount; $i++ ) {
-			Generator\Product::generate();
+			try {
+				$generator->generate( true, $assoc_args );
+			} catch ( \Exception $e ) {
+				WP_CLI::error( $e->getMessage() );
+			}
 			$progress->tick();
 		}
 		$progress->finish();
@@ -60,11 +86,15 @@ class CLI extends WP_CLI_Command {
 	 * @param arrat $assoc_args Associative arguments specified.
 	 */
 	public function orders( $args, $assoc_args ) {
-		list( $amount ) = $args;
-
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Generating orders', $amount );
+		$amount    = isset( $args[0] ) ? intval( $args[0] ) : 100;
+		$generator = new Order();
+		$progress  = \WP_CLI\Utils\make_progress_bar( 'Generating orders', $amount );
 		for ( $i = 1; $i <= $amount; $i++ ) {
-			Generator\Order::generate( true, $assoc_args );
+			try {
+				$generator->generate( true, $assoc_args );
+			} catch ( \Exception $e ) {
+				WP_CLI::error( $e->getMessage() );
+			}
 			$progress->tick();
 		}
 		$progress->finish();
@@ -89,36 +119,42 @@ class CLI extends WP_CLI_Command {
 	 * @param arrat $assoc_args Associative arguments specified.
 	 */
 	public function customers( $args, $assoc_args ) {
-		list( $amount ) = $args;
-
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Generating customers', $amount );
+		$amount    = isset( $args[0] ) ? intval( $args[0] ) : 100;
+		$generator = new Customer();
+		$progress  = \WP_CLI\Utils\make_progress_bar( 'Generating customers', $amount );
 		for ( $i = 1; $i <= $amount; $i++ ) {
-			Generator\Customer::generate();
+			try {
+				$generator->generate();
+			} catch ( \Exception $e ) {
+				WP_CLI::error( $e->getMessage() );
+			}
 			$progress->tick();
 		}
 		$progress->finish();
 		WP_CLI::success( $amount . ' customers generated.' );
 	}
 }
-WP_CLI::add_command( 'wc generate products', array( 'WC\SmoothGenerator\CLI', 'products' ) );
-WP_CLI::add_command( 'wc generate orders', array( 'WC\SmoothGenerator\CLI', 'orders' ), array(
-	'synopsis' => array(
-		array(
-			'name'     => 'id',
-			'type'     => 'positional',
-			'optional' => false,
-		),
-		array(
-			'name'     => 'date-start',
-			'type'     => 'assoc',
-			'optional' => true,
-		),
-		array(
-			'name'     => 'date-end',
-			'type'     => 'assoc',
-			'optional' => true,
-		),
-	),
-) );
-WP_CLI::add_command( 'wc generate customers', array( 'WC\SmoothGenerator\CLI', 'customers' ) );
 
+WP_CLI::add_command( 'wc generate products', array( 'WC\SmoothGenerator\CLI', 'products' ) );
+WP_CLI::add_command(
+	'wc generate orders', array( 'WC\SmoothGenerator\CLI', 'orders' ), array(
+		'synopsis' => array(
+			array(
+				'name'     => 'id',
+				'type'     => 'positional',
+				'optional' => false,
+			),
+			array(
+				'name'     => 'date-start',
+				'type'     => 'assoc',
+				'optional' => true,
+			),
+			array(
+				'name'     => 'date-end',
+				'type'     => 'assoc',
+				'optional' => true,
+			),
+		),
+	)
+);
+WP_CLI::add_command( 'wc generate customers', array( 'WC\SmoothGenerator\CLI', 'customers' ) );
